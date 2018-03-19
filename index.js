@@ -80,7 +80,7 @@ var conf = {
 	}
 	,browserSync: {
 		server: './'
-		,index: '/index.html'
+		,index: '/html/index.html'
 		,open: false
 		,proxyLamp: 'default.loc'
 	}
