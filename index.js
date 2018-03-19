@@ -3,7 +3,7 @@
  * Сборщик верстки для шаблонов Битрикс
  *
  * известные баги:
- * 1. Если в компонентах нет ни одного файла style.less, то таск по сборке стилей будет падать
+ * 1. Если в компонентах нет ни одного файла style.scss, то таск по сборке стилей будет падать
  * 2. При удалении файлов в интерактивном режиме, сервер скорее всего упадет.
  *    Просто заново запускаем и не забиваем себе голову.
  */
@@ -32,7 +32,7 @@ const
 	,iconfont = require('gulp-iconfont')
 	,iconfontCss = require('gulp-iconfont-css')
 	,imagemin = require('gulp-imagemin')
-	,less = require('gulp-less')
+	,sass = require('gulp-sass')
 	,nunjucksRender = require('gulp-nunjucks-render')
 	,nunjucksIncludeData = require('nunjucks-includeData')
 	,plumber = require('gulp-plumber')
@@ -111,53 +111,53 @@ var conf = {
 			,debug_assets: !!gutil.env['debug-bx-assets']
 		}
 	}
-	,less: {
+	,sass: {
 		main: {
-			 base: 'less'
+			 base: 'sass'
 			,dest: 'css'
 			,bundle: '@base/_bundle.css'
 			,files: [
-				'@base/**/*.less'
+				'@base/**/*.scss'
 
-				// Исключаем файлы с переменными less
-				,'!@base/**/var{,s,iable{,s}}{,.*,-*}{,/*,/**/*}.less'
+				// Исключаем файлы с переменными sass
+				,'!@base/**/var{,s,iable{,s}}{,.*,-*}{,/*,/**/*}.scss'
 
 				// исключаем twitter bootstrap (но только подпапки))
-				// файлы именыемые bootstrap*.less не исключаем
+				// файлы именыемые bootstrap*.scss не исключаем
 				// для возможности отдельной сборки
-				,'!@base/**/bootstrap{,.*,-*}{/*,/**/*}.less'
+				,'!@base/**/bootstrap{,.*,-*}{/*,/**/*}.scss'
 
 				// Исключаем файлы и папки начинающие с подчеркивания.
 				//    Будем применять их для импортируемых файлов
 				//    без возможности автономной компиляции
-				,'!@base/**/_*{,/*,/**/*}.less'
+				,'!@base/**/_*{,/*,/**/*}.scss'
 
-				// Исключаем библиотеки миксинов less
-				,'!@base/**/mixin{,s}{,.*,-*}{,/*,/**/*}.less'
-				,'!@base/**/lib{,s,rary{,s}}{,.*,-*}{,/*,/**/*}.less'
+				// Исключаем библиотеки миксинов sass
+				,'!@base/**/mixin{,s}{,.*,-*}{,/*,/**/*}.scss'
+				,'!@base/**/lib{,s,rary{,s}}{,.*,-*}{,/*,/**/*}.scss'
 			]
 			,watchImports: [
-				 // Это те файлы библиотек при которых пересобираем все несущие less-файлы
-				 // смотри исключения в conf.less.main.files
-				 '@base/var{,s,iable{,s}}{,.*,-*}{,/*,/**/*}.less'
-				,'@base/bootstrap{,.*,-*}{/*,/**/*}.less'
-				,'@base/_*{,/*,/**/*}.less'
-				,'@base/mixin{,s}{,.*,-*}{,/*,/**/*}.less'
-				,'@base/lib{,s,rary{,s}}{,.*,-*}{,/*,/**/*}.less'
+				 // Это те файлы библиотек при которых пересобираем все несущие sass-файлы
+				 // смотри исключения в conf.sass.main.files
+				 '@base/var{,s,iable{,s}}{,.*,-*}{,/*,/**/*}.scss'
+				,'@base/bootstrap{,.*,-*}{/*,/**/*}.scss'
+				,'@base/_*{,/*,/**/*}.scss'
+				,'@base/mixin{,s}{,.*,-*}{,/*,/**/*}.scss'
+				,'@base/lib{,s,rary{,s}}{,.*,-*}{,/*,/**/*}.scss'
 				// При изменении файлов входящих в src пересобираем файлы по одному
 				// Дабы браузер быстрее реагировал в режиме разработки
 			]
 		}
 		,components: {
-			 styleName: 'style.less'
+			 styleName: 'style.scss'
 			,files: [
 				 'components/*/*/{*,.*}/@styleName'
 				,'components/*/*/{*,.*}/*/*/{*,.*}/@styleName'
 			]
 			,watch: [
-				 'components/*/*/**/*.less'
-				,'components/*/*/{*,.*}/**/*.less'
-				,'components/*/*/{*,.*}/*/*/{*,.*}/**/*.less'
+				 'components/*/*/**/*.scss'
+				,'components/*/*/{*,.*}/**/*.scss'
+				,'components/*/*/{*,.*}/*/*/{*,.*}/**/*.scss'
 			]
 		}
 	}
@@ -227,24 +227,24 @@ var conf = {
 		,minify: true
 		,dest: {
 			img: 'images/sprites',
-			less: 'less/vars/sprites',
-			lessMixins: 'less/mixins/sprites.less'
+			sass: 'sass/vars/sprites',
+			sassMixins: 'sass/mixins/sprites.scss'
 		}
 	}
 	,googleWebFonts: {
 		fontsList: 'fonts/gwf/google-web-fonts.list' // relative to the site template root
 		,fontsDir: '../fonts/gwf/' // fontsDir is relative to dest
 		,cssDir: 'lib/' // cssDir is relative to dest
-		,cssFilename: 'google-web-fonts.less'
-		,dest: './less/'
+		,cssFilename: 'google-web-fonts.scss'
+		,dest: './sass/'
 	}
 	,svgIconFont: {
 		src: 'img.src/svgicons/**/*.svg'
 		,formats: ['woff2', 'woff', 'ttf', 'eot', 'svg']
-		,less: {
-			template: 'img.src/svgicons/_less.tmpl'
+		,sass: {
+			template: 'img.src/svgicons/_sass.tmpl'
 			// result path is relative to dest folder i.e. fonts/svgicons in this case
-			,result: '../../less/mixins/svgicons.less'
+			,result: '../../sass/mixins/svgicons.scss'
 		}
 		,dest: 'fonts/svgicons'
 	}
@@ -290,8 +290,8 @@ function replacePlaceHolder(object, replace, callcount) {
 	}
 }
 replacePlaceHolder(conf.html, {cond: /@base/, value: conf.html.base});
-replacePlaceHolder(conf.less.main, {cond: /@base/, value: conf.less.main.base});
-replacePlaceHolder(conf.less.components.files, {cond: /@styleName/, value: conf.less.components.styleName});
+replacePlaceHolder(conf.sass.main, {cond: /@base/, value: conf.sass.main.base});
+replacePlaceHolder(conf.sass.components.files, {cond: /@styleName/, value: conf.sass.components.styleName});
 
 
 conf.debug = !!(gutil.env.debug ? true : conf.debug);
@@ -423,36 +423,36 @@ function browserSyncReload() {
 }
 
 /**
- * Сборка less-файлов
- * @task {less}
+ * Сборка sass-файлов
+ * @task {sass}
  * @order {3}
  */
 var cssBundleFiles = null;
-//gulp.task('less', ['less-main-bundle', 'less-components']);
+//gulp.task('sass', ['sass-main-bundle', 'sass-components']);
 // нет смысла запускать параллельно - нет прироста в скорости
 // а последовательный запуск понятнее отлаживать при случае
-gulp.task('less', function(done) {
-	runSequence('less-main', 'less-components', 'css-bundle', done);
+gulp.task('sass', function(done) {
+	runSequence('sass-main', 'sass-components', 'css-bundle', done);
 });
 
-gulp.task('less-main', function() {
-	return lessCommonPipe(
-		gulp.src(conf.less.main.files, {dot: true}),
-		conf.less.main.dest,
-		conf.debug ? 'main less:' : ''
+gulp.task('sass-main', function() {
+	return sassCommonPipe(
+		gulp.src(conf.sass.main.files, {dot: true}),
+		conf.sass.main.dest,
+		conf.debug ? 'main sass:' : ''
 	);
 });
-gulp.task('less-main-bundle', function(done) {
-	runSequence('less-main', 'css-bundle', done);
+gulp.task('sass-main-bundle', function(done) {
+	runSequence('sass-main', 'css-bundle', done);
 });
-gulp.task('less-components', function(done) {
-	return lessCommonPipe(
-		gulp.src(conf.less.components.files, {dot: true, base: '.'}),
+gulp.task('sass-components', function(done) {
+	return sassCommonPipe(
+		gulp.src(conf.sass.components.files, {dot: true, base: '.'}),
 		'.',
-		conf.debug ? 'component less:' : ''
+		conf.debug ? 'component sass:' : ''
 	);
 });
-function lessCommonPipe(stream, dest, debugTitle) {
+function sassCommonPipe(stream, dest, debugTitle) {
 	var debugMode = true;
 	if( 'string' != typeof(debugTitle)
 		|| '' == debugTitle
@@ -495,11 +495,11 @@ function lessCommonPipe(stream, dest, debugTitle) {
 	);
 
 	stream.pipe(plumber())
-		.pipe(rename({extname: '.less'}))
+		.pipe(rename({extname: '.scss'}))
 		.pipe(sourcemaps.init())
-		.pipe(less())
+		.pipe(sass())
 		.pipe(debugMode ? debug({title: debugTitle}) : gutil.noop())
-		// fix for stop watching on less compile error)
+		// fix for stop watching on sass compile error)
 		.on('error', swallowError)
 		//.pipe(autoprefixer())
 
@@ -519,7 +519,7 @@ function lessCommonPipe(stream, dest, debugTitle) {
 	;
 	return stream;
 }
-function lessWatcher(changedFile, target) {
+function sassWatcher(changedFile, target) {
 	var file = getRelPathByChanged(changedFile)
 		,fileName = path.basename(file)
 		,stream = null
@@ -533,52 +533,52 @@ function lessWatcher(changedFile, target) {
 	}
 	switch(target) {
 		case 'main':
-			stream = gulp.src(file, {dot: true, base: conf.less.main.base});
+			stream = gulp.src(file, {dot: true, base: conf.sass.main.base});
 			stream.pipe(tap(function(file) {
 				var filePath = file.path.replace(/\\/g, '/');
-				var lessDir = conf.curDir+'/'+conf.less.main.base;
-				var relLessFilePath = null;
-				lessDir = lessDir
+				var sassDir = conf.curDir+'/'+conf.sass.main.base;
+				var relSassFilePath = null;
+				sassDir = sassDir
 					.replace(/\\/g, '/')
 					.replace(/\/\//g, '/');
-				if(filePath.indexOf(lessDir) !== 0) {
-					throw 'lesscss file out of configured less dir: "'+filePath+'"';
+				if(filePath.indexOf(sassDir) !== 0) {
+					throw 'sasscss file out of configured sass dir: "'+filePath+'"';
 				}
-				relLessFilePath = conf.less.main.dest+'/'+substr(filePath, lessDir.length+1);
-				relLessFilePath = relLessFilePath
+				relSassFilePath = conf.sass.main.dest+'/'+substr(filePath, sassDir.length+1);
+				relSassFilePath = relSassFilePath
 					.trim()
 					.replace(/\/\//g, '/')
-					.replace(/\.less$/, '.css');
+					.replace(/\.scss$/, '.css');
 				if( null !== cssBundleFiles
-					&& cssBundleFiles.indexOf(relLessFilePath) !== -1
+					&& cssBundleFiles.indexOf(relSassFilePath) !== -1
 				) {
 					runSequence('css-bundle');
 				}
 			}));
-			dest = conf.less.main.dest;
-			if(conf.debug) gutil.log('less watcher: '+gutil.colors.blue(file));
+			dest = conf.sass.main.dest;
+			if(conf.debug) gutil.log('sass watcher: '+gutil.colors.blue(file));
 			break;
 		case 'components':
 			dest = path.dirname(file);
-			stream = gulp.src(dest+'/'+conf.less.components.styleName, {dot: true});
+			stream = gulp.src(dest+'/'+conf.sass.components.styleName, {dot: true});
 			if(conf.debug) gutil.log(
-				'less watcher: '
+				'sass watcher: '
 				+gutil.colors.blue(dest+'/'
-					+((fileName == conf.less.components.styleName)
-						? '{ '+fileName+' -> '+fileName.replace(/\.less$/, '.css')+' }'
+					+((fileName == conf.sass.components.styleName)
+						? '{ '+fileName+' -> '+fileName.replace(/\.scss$/, '.css')+' }'
 						: '{ '
 							+'changed: '+fileName+';  compiling: '
-							+conf.less.components.styleName +' -> '
-							+conf.less.components.styleName.replace(/\.less$/, '.css')
+							+conf.sass.components.styleName +' -> '
+							+conf.sass.components.styleName.replace(/\.scss$/, '.css')
 							+' }'
 					)
 				)
 			);
 			break;
 		default:
-			throw 'less-watcher: wrong watcher target';
+			throw 'sass-watcher: wrong watcher target';
 	}
-	lessCommonPipe(stream, dest, conf.debug ? 'less watcher:' : '');
+	sassCommonPipe(stream, dest, conf.debug ? 'sass watcher:' : '');
 	return stream;
 }
 
@@ -602,7 +602,7 @@ gulp.task('css-bundle', function() {
 					.pipe(tap(function(file) {
 						file.contents = new Buffer(cssBundleFilesImport, 'utf-8');
 					}))
-					.pipe(gulp.dest(conf.less.main.dest))
+					.pipe(gulp.dest(conf.sass.main.dest))
 					// Уведомляем браузер если изменился bundle-import.css
 					.pipe(browserSyncStream())
 				);
@@ -623,7 +623,7 @@ gulp.task('css-bundle', function() {
 							.replace(/^\//, '')
 							.replace(/\/$/, '');
 						var cssSrcDir = path.dirname(cssFile).trim();
-						var dest = conf.less.main.dest.trim().replace(/^\//, '').replace(/\/$/, '');
+						var dest = conf.sass.main.dest.trim().replace(/^\//, '').replace(/\/$/, '');
 						dest = dest
 							.replace(/\\/g, '/')
 							.replace(/\/\/\//g, '/')
@@ -650,7 +650,7 @@ gulp.task('css-bundle', function() {
 					bundleStream
 					.pipe(concat(bundleName+'.css'))
 					.pipe(sourcemaps.write('./'))
-					.pipe(gulp.dest(conf.less.main.dest))
+					.pipe(gulp.dest(conf.sass.main.dest))
 					.pipe(tap(function(file) {
 						var relFilePath = getRelPathByChanged(file);
 						if(path.extname(relFilePath) === '.css') {
@@ -701,16 +701,16 @@ gulp.task('css-bundle-parse-imports-list', function(done) {
 function parseCssBundleImportList(afterParseCallback) {
 	cssBundleFiles = [];
 	var cssBundleFilesImport = '';
-	return gulp.src(conf.less.main.bundle)
+	return gulp.src(conf.sass.main.bundle)
 		.pipe(conf.debug ? debug({title: 'css bundle:'}) : gutil.noop())
 		.pipe(tap(function(file) {
 			var bundleName = path.basename(file.path)
 				.replace(/^_/, '')
-				.replace(/\.(less|css)$/i, '');
+				.replace(/\.(scss|css)$/i, '');
 			var relBundleFilePath = getRelPathByChanged(file);
 
-			var regim = /\s*@import\s*['"]([a-zA-Z0-9_\-\/\.]+)(?:\.css|\.less)['"]\;\s*/gim;
-			var rei = /\s*@import\s*['"]([a-zA-Z0-9_\-\/\.]+)(?:\.css|\.less)['"]\;\s*/i;
+			var regim = /\s*@import\s*['"]([a-zA-Z0-9_\-\/\.]+)(?:\.css|\.scss)['"]\;\s*/gim;
+			var rei = /\s*@import\s*['"]([a-zA-Z0-9_\-\/\.]+)(?:\.css|\.scss)['"]\;\s*/i;
 			var matchedStringList = file.contents
 				.toString()
 				.replace(/^\/\/(.*)/gim, '') // remove line comments
@@ -722,7 +722,7 @@ function parseCssBundleImportList(afterParseCallback) {
 					var match = matchedString.match(rei);
 					if( match ) {
 						var importedCssFile = match[1]+'.css';
-						cssBundleFiles.push(conf.less.main.dest+'/'+importedCssFile);
+						cssBundleFiles.push(conf.sass.main.dest+'/'+importedCssFile);
 						cssBundleFilesImport +='@import "'+importedCssFile+'";\n';
 					}
 				}
@@ -1159,8 +1159,8 @@ gulp.task('svg-icons-font', function() {
 		.pipe(plumber())
 		.pipe(iconfontCss({
 			fontName: fontName
-			,path: conf.svgIconFont.less.template
-			,targetPath: conf.svgIconFont.less.result
+			,path: conf.svgIconFont.sass.template
+			,targetPath: conf.svgIconFont.sass.result
 			,fontPath: conf.svgIconFont.dest
 			,cssClass: 'afonico'
 		}))
@@ -1212,21 +1212,21 @@ gulp.task('sprites', function(done) {
 	var spriteBatchCounter = 0;
 	getSpriteBatchList().forEach(function(spriteBatch) {
 		var filterSpriteImg = filter('*.png', {restore: true})
-			,filterLess = filter('*.less', {restore: true});
+			,filterSass = filter('*.scss', {restore: true});
 		spriteBatch.stream
 			.pipe(conf.debug ? debug({title: 'sprite "'+spriteBatch.name+'" image:'}) : gutil.noop())
 			// Компилируем спрайты
 			.pipe(spritesmith({
 				imgName: spriteBatch.name+'.png'
 				,imgPath: conf.sprites.imgUrl+'/'+spriteBatch.name+'.png'
-				,cssName: spriteBatch.name+'.less'
+				,cssName: spriteBatch.name+'.scss'
 				,cssVarMap: function (sprite) {
 					sprite.name = 'sprite-'+spriteBatch.name+'-' + sprite.name;
 				}
 			}))
-			// Убираем из less файлов лишнее и выделяем миксины в отдельный файл
+			// Убираем из sass файлов лишнее и выделяем миксины в отдельный файл
 			.pipe(tap(function(file) {
-				if(path.extname(file.path) === '.less') {
+				if(path.extname(file.path) === '.scss') {
 					var fileContent = file.contents.toString();
 					// remove line comments
 					fileContent = fileContent.replace(/^\/\/(.*)/gmi, '');
@@ -1244,25 +1244,25 @@ gulp.task('sprites', function(done) {
 						matches.forEach(function(text) {
 							mixinsContent += text+'\n';
 						});
-						var lessMixinsFileName = path.basename(conf.sprites.dest.lessMixins)
-							,lessMixinsDir = path.dirname(conf.sprites.dest.lessMixins)
-							,lessMixinsSpriteStream = vsrc(lessMixinsFileName)
-							,lessMixinsSpriteStreamEnd = lessMixinsSpriteStream
+						var sassMixinsFileName = path.basename(conf.sprites.dest.sassMixins)
+							,sassMixinsDir = path.dirname(conf.sprites.dest.sassMixins)
+							,sassMixinsSpriteStream = vsrc(sassMixinsFileName)
+							,sassMixinsSpriteStreamEnd = sassMixinsSpriteStream
 						;
-						lessMixinsSpriteStream.write(mixinsContent);
+						sassMixinsSpriteStream.write(mixinsContent);
 						process.nextTick(function() {
-							lessMixinsSpriteStream.end();
+							sassMixinsSpriteStream.end();
 						});
 
-						lessMixinsSpriteStream
-							.pipe(conf.debug ? debug({title: 'spriteBatch less mixin:'}) : gutil.noop())
+						sassMixinsSpriteStream
+							.pipe(conf.debug ? debug({title: 'spriteBatch sass mixin:'}) : gutil.noop())
 							.pipe(vbuf())
-							.pipe(gulp.dest(lessMixinsDir))
+							.pipe(gulp.dest(sassMixinsDir))
 						;
-						resultStream.add(lessMixinsSpriteStream);
+						resultStream.add(sassMixinsSpriteStream);
 					}
 
-					// remove all except less-vars
+					// remove all except sass-vars
 					fileContent = fileContent.replace(/^[^@](.*)/gmi, '');
 					//rename @spritesheet -> @spritesheet-{spriteBatch.name}
 					fileContent = fileContent.replace(/@spritesheet/gmi, '@spritesheet-'+spriteBatch.name);
@@ -1284,9 +1284,9 @@ gulp.task('sprites', function(done) {
 					.pipe(gulp.dest(destDir))
 			}))
 			.pipe(filterSpriteImg.restore)
-			.pipe(filterLess)
-			.pipe(gulp.dest(conf.sprites.dest.less))
-			.pipe(filterLess.restore)
+			.pipe(filterSass)
+			.pipe(gulp.dest(conf.sprites.dest.sass))
+			.pipe(filterSass.restore)
 			.pipe(browserSyncStream())
 		;
 		resultStream.add(spriteBatch.stream);
@@ -1352,9 +1352,9 @@ gulp.task('bower', function() {
 gulp.task('build', function(done) {
 	// Все последовательно, параллельность тут все равно не дает скорости
 	runSequence(
-		'less-main',
+		'sass-main',
 		'css-bundle',
-		'less-components',
+		'sass-components',
 		'js-bundle',
 		'js-scripts',
 		'js-vendor-bundle',
@@ -1382,13 +1382,13 @@ gulp.task('watch', function(done) {
 });
 gulp.task('add-watchers', function (done) {
 	watchers.push(gulp.watch(conf.html.watch, WATCH_OPTIONS, ['html']));
-	watchers.push(gulp.watch(conf.less.main.watchImports, WATCH_OPTIONS, ['less-main-bundle']));
-	watchers.push(gulp.watch(conf.less.main.bundle, WATCH_OPTIONS, ['css-bundle']));
-	watchers.push(gulp.watch(conf.less.main.files, WATCH_OPTIONS, function(changed) {
-		return lessWatcher(changed, 'main');
+	watchers.push(gulp.watch(conf.sass.main.watchImports, WATCH_OPTIONS, ['sass-main-bundle']));
+	watchers.push(gulp.watch(conf.sass.main.bundle, WATCH_OPTIONS, ['css-bundle']));
+	watchers.push(gulp.watch(conf.sass.main.files, WATCH_OPTIONS, function(changed) {
+		return sassWatcher(changed, 'main');
 	}));
-	watchers.push(gulp.watch(conf.less.components.watch, WATCH_OPTIONS, function(changed) {
-		return lessWatcher(changed, 'components');
+	watchers.push(gulp.watch(conf.sass.components.watch, WATCH_OPTIONS, function(changed) {
+		return sassWatcher(changed, 'components');
 	}));
 	watchers.push(gulp.watch(conf.js.bundle.watch, WATCH_OPTIONS, ['js-bundle']));
 	watchers.push(gulp.watch(conf.js.vendor.src, WATCH_OPTIONS, ['js-vendor-bundle']));
@@ -1406,7 +1406,7 @@ gulp.task('remove-watchers', function(done) {
 });
 /**
  * Слежение за горячими клавишами.
- * Подсказка по горячим клавишам: $ gulp help-hk | less
+ * Подсказка по горячим клавишам: $ gulp help-hk | sass
  * @task {watch-hotkeys}
  * @order {16}
  */
@@ -1447,23 +1447,23 @@ gulp.task('watch-hotkeys', function() {
 	});
 	keyListener.on('buildAllStyles', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less-main', 'less-components', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass-main', 'sass-components', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('buildMainStyles', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less-main', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass-main', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('buildMainStylesAndBundle', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less-main-bundle', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass-main-bundle', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('buildAllStylesAndBundle', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('buildComponentStyles', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less-components', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass-components', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('buildCssBundle', function() {
 		beginInteractiveModeTaskAction();
@@ -1513,7 +1513,7 @@ gulp.task('watch-hotkeys', function() {
 	});
 	keyListener.on('reloadAll', function() {
 		beginInteractiveModeTaskAction();
-		runSequence('remove-watchers', 'less-components', 'js-scripts', 'html', 'add-watchers', 'add-watchers', finishInteractiveModeTaskAction);
+		runSequence('remove-watchers', 'sass-components', 'js-scripts', 'html', 'add-watchers', 'add-watchers', finishInteractiveModeTaskAction);
 	});
 	keyListener.on('build', function() {
 		beginInteractiveModeTaskAction();
@@ -1694,7 +1694,7 @@ function showHelpHotKeys(done) {
                 в результате обращения watcher-ов к уже отсутствующим на ФС элементам.
                 Для повторного запуска нажимите "w".
 
-        "r" - Более масштабная перегрузка watcher-ов включающая пересборку html, less и js
+        "r" - Более масштабная перегрузка watcher-ов включающая пересборку html, sass и js
               Это необходимо например потому, что тот же html зависит от состава файлов css-bundle-а.
               При создании новых компонентов и шаблонов необходимо использовать именно этот вариант.
 
@@ -1707,17 +1707,17 @@ function showHelpHotKeys(done) {
         "h" - Сборка njk-файлов в html. Аналог $ gulp html
 
         "s" - Сборка основных стилей.
-              Аналог $ gulp less-main
+              Аналог $ gulp sass-main
 "Shift + s" - Сборка основных стилей и их bundle-а
-              Аналог $ gulp less-main-bundle
+              Аналог $ gulp sass-main-bundle
 
         "a" - Сборка всех стилей (но без сборки bundle-а).
-              Аналог $ gulp less-main && gulp less-components
+              Аналог $ gulp sass-main && gulp sass-components
 "Shift + a" - Полный сборка всех стилей: компоненты, основные стили + bundle.
-              Аналог $ gulp less
+              Аналог $ gulp sass
 
-        "l" - Соберет только less-файлы компонентов (component/ns/name/tpl/style.less).
-              Аналог $ gulp less-components
+        "l" - Соберет только sass-файлы компонентов (component/ns/name/tpl/style.scss).
+              Аналог $ gulp sass-components
 
 "Shift + l" - Сборка только css-bundle-а.
               Аналог $ gulp css-bundle
@@ -1748,8 +1748,8 @@ function showHelpHotKeys(done) {
 
         "g" - Загрузка шрифтов google-web-fonts (fonts.google.com)
               Аналог $ gulp google-web-fonts
-              Загрузка повлечет за собой создание less-файлов, на которые
-              настроен watcher, соответственно будут пересобраны все less-файлы $ gulp less
+              Загрузка повлечет за собой создание sass-файлов, на которые
+              настроен watcher, соответственно будут пересобраны все sass-файлы $ gulp sass
 
         "b" - Полная сборка проекта. Аналог $ gulp build
 
