@@ -227,7 +227,7 @@ var conf = {
 		,minify: true
 		,dest: {
 			img: 'images/sprites',
-			sass: 'sass/vars/sprites',
+			sass: 'sass/include/sprites',
 			sassMixins: 'sass/mixins/sprites.scss'
 		}
 	}
@@ -1208,8 +1208,9 @@ gulp.task('images', function() {
  */
 gulp.task('sprites', function(done) {
 	var resultStream = merge();
-	// нам над достать миксины из первого сспрайта и положить в отдельный файл
+	// нам над достать миксины из первого спрайта и положить в отдельный файл
 	var spriteBatchCounter = 0;
+	// перебираем все спрайтсеты
 	getSpriteBatchList().forEach(function(spriteBatch) {
 		var filterSpriteImg = filter('*.png', {restore: true})
 			,filterSass = filter('*.scss', {restore: true});
@@ -1228,9 +1229,8 @@ gulp.task('sprites', function(done) {
 			.pipe(tap(function(file) {
 				if(path.extname(file.path) === '.scss') {
 					var fileContent = file.contents.toString();
-					// remove line comments
+					// удаление коментариев из файла
 					fileContent = fileContent.replace(/^\/\/(.*)/gmi, '');
-					// remove multi line comments
 					fileContent = fileContent.replace(/\/\*[\s\S]*?\*\/\n?/gmi, '');
 
 					// получаем миксины для размещения в отдельном файле
@@ -1239,7 +1239,7 @@ gulp.task('sprites', function(done) {
 					// https://github.com/gulpjs/gulp/blob/master/docs/recipes/make-stream-from-buffer.md
 					// и сделано по аналогии
 					if(0 == spriteBatchCounter) {
-						var matches = fileContent.match(/^\.sprites?(?:\(|-)[\s\S]*?\n}/gmi)
+						var matches = fileContent.match(/^@mixin\ssprites?(?:\(|-)[\s\S]*?\n}/gmi)
 							,mixinsContent = '';
 						matches.forEach(function(text) {
 							mixinsContent += text+'\n';
@@ -1263,9 +1263,9 @@ gulp.task('sprites', function(done) {
 					}
 
 					// remove all except sass-vars
-					fileContent = fileContent.replace(/^[^@](.*)/gmi, '');
+					fileContent = fileContent.replace(/^[^\n$](.*)/gmi, '');
 					//rename @spritesheet -> @spritesheet-{spriteBatch.name}
-					fileContent = fileContent.replace(/@spritesheet/gmi, '@spritesheet-'+spriteBatch.name);
+					fileContent = fileContent.replace(/\$spritesheet/gmi, '\$spritesheet-'+spriteBatch.name);
 					// remove spaces
 					fileContent = fileContent.replace(/\n\n/gmi, '');
 					file.contents = new Buffer(fileContent, 'utf-8');
@@ -1295,6 +1295,8 @@ gulp.task('sprites', function(done) {
 });
 
 var spriteBatchNames = null;
+// Функция возвращает названия директорий в папке со спрайтами
+// Каждая директория - отдельный sprite set
 function getSpriteBatchNames() {
 	if(null == spriteBatchNames) {
 		var spritesDir = conf.curDir+'/'+conf.sprites.src;
@@ -1312,11 +1314,13 @@ function getSpriteBatchNames() {
 }
 
 var spriteBatchList = null;
+// Функция возвращает массив sprite set'ов с названием и stream'ом
 function getSpriteBatchList() {
 	if( null != spriteBatchList ) return spriteBatchList;
-	if( getSpriteBatchNames().length > 0 ) {
+	var spriteBatchNames = getSpriteBatchNames();
+	if( spriteBatchNames.length > 0 ) {
 		spriteBatchList = [];
-		getSpriteBatchNames().forEach(function(batchName) {
+		spriteBatchNames.forEach(function(batchName) {
 			spriteBatchList.push({
 				name: batchName
 				,stream: gulp.src(conf.sprites.src+'/'+batchName+'/*.png')
